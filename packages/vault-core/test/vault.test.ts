@@ -1,0 +1,70 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  SecretNotFoundError,
+  deleteSecret,
+  getSecretValue,
+  initVault,
+  listSecrets,
+  setSecret,
+  vaultPath,
+} from '../src/index';
+
+let tmpHome: string;
+
+beforeEach(() => {
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'hushenv-test-'));
+  process.env.HUSHENV_HOME = tmpHome;
+  process.env.HUSHENV_MASTER_KEY = randomBytes(32).toString('base64');
+  initVault();
+});
+
+afterEach(() => {
+  delete process.env.HUSHENV_HOME;
+  delete process.env.HUSHENV_MASTER_KEY;
+  fs.rmSync(tmpHome, { recursive: true, force: true });
+});
+
+describe('vault', () => {
+  it('sets and gets a secret', () => {
+    setSecret('DB_PASSWORD', 'hunter2');
+    expect(getSecretValue('DB_PASSWORD')).toBe('hunter2');
+  });
+
+  it('never writes plaintext to disk', () => {
+    setSecret('DB_PASSWORD', 'super-plaintext-marker');
+    const raw = fs.readFileSync(vaultPath(), 'utf8');
+    expect(raw).not.toContain('super-plaintext-marker');
+  });
+
+  it('updates preserve createdAt and bump updatedAt', () => {
+    setSecret('K', 'v1');
+    const before = listSecrets()[0]!;
+    setSecret('K', 'v2');
+    const after = listSecrets()[0]!;
+    expect(after.createdAt).toBe(before.createdAt);
+    expect(getSecretValue('K')).toBe('v2');
+  });
+
+  it('lists names sorted, without values', () => {
+    setSecret('B_KEY', 'b');
+    setSecret('A_KEY', 'a');
+    const names = listSecrets().map((s) => s.name);
+    expect(names).toEqual(['A_KEY', 'B_KEY']);
+  });
+
+  it('deletes a secret', () => {
+    setSecret('K', 'v');
+    expect(deleteSecret('K')).toBe(true);
+    expect(deleteSecret('K')).toBe(false);
+    expect(() => getSecretValue('K')).toThrow(SecretNotFoundError);
+  });
+
+  it('rejects invalid names and empty values', () => {
+    expect(() => setSecret('1BAD', 'x')).toThrow(/Invalid secret name/);
+    expect(() => setSecret('OK', '')).toThrow(/empty value/);
+  });
+});
