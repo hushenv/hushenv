@@ -1,0 +1,58 @@
+name: Publish Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # Required for OIDC (npm Trusted Publisher)
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # version comes from the root package.json "packageManager" field
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Run Tests
+        run: pnpm -r test
+
+      # pnpm pack rewrites workspace:* to the real version and runs prepack;
+      # npm publish (npm >= 11.5.1) performs the OIDC token exchange.
+      - name: Publish @hushenv/vault-core
+        working-directory: packages/vault-core
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@hushenv/vault-core@$VERSION" version > /dev/null 2>&1; then
+            echo "@hushenv/vault-core@$VERSION already published, skipping."
+          else
+            pnpm pack
+            npm publish ./hushenv-vault-core-$VERSION.tgz --provenance --access public
+          fi
+
+      - name: Publish hushenv
+        working-directory: apps/cli
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "hushenv@$VERSION" version > /dev/null 2>&1; then
+            echo "hushenv@$VERSION already published, skipping."
+          else
+            pnpm pack
+            npm publish ./hushenv-$VERSION.tgz --provenance --access public
+          fi

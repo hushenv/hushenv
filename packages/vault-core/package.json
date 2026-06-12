@@ -8,7 +8,9 @@
     ".": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -24,7 +26,24 @@
     "vitest": "^4.1.0"
   },
   "description": "hushenv engine: AES-256-GCM vault, OS keychain, name-bound encryption. No env-file or CLI knowledge.",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hushenv/hushenv.git",
+    "directory": "packages/vault-core"
+  },
+  "homepage": "https://github.com/hushenv/hushenv#readme",
+  "bugs": {
+    "url": "https://github.com/hushenv/hushenv/issues"
+  },
+  "keywords": [
+    "secrets",
+    "vault",
+    "keychain",
+    "keyring",
+    "aes-256-gcm",
+    "security"
+  ],
   "engines": {
     "node": ">=20"
   },
