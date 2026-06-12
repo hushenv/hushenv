@@ -4,6 +4,7 @@ import { NotInitializedError, SecretNotFoundError } from '@hushenv/vault-core';
 import { getCommand } from './commands/get.js';
 import { initCommand } from './commands/init.js';
 import { lsCommand } from './commands/ls.js';
+import { mvCommand } from './commands/mv.js';
 import { rmCommand } from './commands/rm.js';
 import { runCommand } from './commands/run.js';
 import { setCommand } from './commands/set.js';
@@ -42,6 +43,15 @@ program
 program.command('ls').description('List secret names (never values)').action(lsCommand);
 
 program.command('rm').description('Delete a secret').argument('<name>').action(rmCommand);
+
+program
+  .command('mv')
+  .alias('rename')
+  .description('Rename a secret (the value is re-encrypted under the new name)')
+  .argument('<old>', 'current secret name')
+  .argument('<new>', 'new secret name')
+  .option('--force', 'overwrite <new> if it already exists')
+  .action(mvCommand);
 
 program
   .command('run')

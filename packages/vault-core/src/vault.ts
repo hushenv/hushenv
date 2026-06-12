@@ -74,6 +74,31 @@ export function listSecrets(): Array<{ name: string; createdAt: string; updatedA
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Ciphertext is bound to the name (GCM AAD), so renaming re-encrypts the value. */
+export function renameSecret(
+  oldName: string,
+  newName: string,
+  opts: { force?: boolean } = {}
+): void {
+  assertValidName(newName);
+  const key = getMasterKey();
+  const vault = loadVault();
+  const entry = vault.secrets[oldName];
+  if (!entry) throw new SecretNotFoundError(oldName);
+  if (oldName === newName) return;
+  if (vault.secrets[newName] && !opts.force) {
+    throw new Error(`Secret "${newName}" already exists. Use --force to overwrite it.`);
+  }
+  const value = decryptValue(key, oldName, entry);
+  vault.secrets[newName] = {
+    ...encryptValue(key, newName, value),
+    createdAt: entry.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+  delete vault.secrets[oldName];
+  saveVault(vault);
+}
+
 export function deleteSecret(name: string): boolean {
   const vault = loadVault();
   if (!vault.secrets[name]) return false;

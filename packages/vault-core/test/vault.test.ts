@@ -9,6 +9,7 @@ import {
   getSecretValue,
   initVault,
   listSecrets,
+  renameSecret,
   setSecret,
   vaultPath,
 } from '../src/index';
@@ -61,6 +62,30 @@ describe('vault', () => {
     expect(deleteSecret('K')).toBe(true);
     expect(deleteSecret('K')).toBe(false);
     expect(() => getSecretValue('K')).toThrow(SecretNotFoundError);
+  });
+
+  it('renames a secret, preserving createdAt', () => {
+    setSecret('OLD', 'v');
+    const before = listSecrets()[0]!;
+    renameSecret('OLD', 'NEW');
+    expect(getSecretValue('NEW')).toBe('v');
+    expect(() => getSecretValue('OLD')).toThrow(SecretNotFoundError);
+    expect(listSecrets()[0]!.createdAt).toBe(before.createdAt);
+  });
+
+  it('rename refuses to overwrite unless forced', () => {
+    setSecret('A', 'a');
+    setSecret('B', 'b');
+    expect(() => renameSecret('A', 'B')).toThrow(/already exists/);
+    renameSecret('A', 'B', { force: true });
+    expect(getSecretValue('B')).toBe('a');
+    expect(listSecrets().map((s) => s.name)).toEqual(['B']);
+  });
+
+  it('rename rejects missing sources and invalid targets', () => {
+    setSecret('K', 'v');
+    expect(() => renameSecret('MISSING', 'X')).toThrow(SecretNotFoundError);
+    expect(() => renameSecret('K', '1BAD')).toThrow(/Invalid secret name/);
   });
 
   it('rejects invalid names and empty values', () => {

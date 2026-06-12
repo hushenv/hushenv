@@ -42,6 +42,7 @@ hushenv run -f .env.local -- pnpm dev
 | `hushenv get <name>` | Reveal a value. Requires an interactive TTY + confirmation; `--force` to bypass (use sparingly). |
 | `hushenv ls` | List names and update dates. Never values. |
 | `hushenv rm <name>` | Delete a secret |
+| `hushenv mv <old> <new>` | Rename a secret (alias: `rename`). Re-encrypted under the new name; `--force` to overwrite. |
 | `hushenv run [-f file]... -- <cmd>` | Resolve refs and run the command with secrets injected |
 
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
