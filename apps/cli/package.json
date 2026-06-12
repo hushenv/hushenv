@@ -1,6 +1,6 @@
 {
   "name": "hushenv",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local secret manager for the agent era - encrypted vault, {hushenv.X} refs in .env, plaintext only at runtime.",
   "type": "module",
   "license": "Apache-2.0",
