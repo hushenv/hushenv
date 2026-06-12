@@ -1,6 +1,9 @@
 # @hushenv/vault-core
 
-The engine behind [hushenv](https://www.npmjs.com/package/hushenv) — if you just want to manage secrets for your `.env` files, install the `hushenv` CLI instead.
+[![npm version](https://img.shields.io/npm/v/@hushenv/vault-core)](https://www.npmjs.com/package/@hushenv/vault-core)
+[![license](https://img.shields.io/npm/l/@hushenv/vault-core)](https://github.com/hushenv/hushenv/blob/main/LICENSE)
+
+The engine behind [hushenv](https://www.npmjs.com/package/hushenv) — if you just want to manage secrets for your `.env` files, install the `hushenv` CLI instead ([per-stack guides](https://github.com/hushenv/hushenv/tree/main/docs)).
 
 This package provides the storage and crypto layer, with no env-file or CLI knowledge:
 

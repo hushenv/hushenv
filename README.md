@@ -1,5 +1,10 @@
 # hushenv
 
+[![npm version](https://img.shields.io/npm/v/hushenv)](https://www.npmjs.com/package/hushenv)
+[![license](https://img.shields.io/npm/l/hushenv)](https://github.com/hushenv/hushenv/blob/main/LICENSE)
+[![publish](https://github.com/hushenv/hushenv/actions/workflows/publish.yml/badge.svg)](https://github.com/hushenv/hushenv/actions/workflows/publish.yml)
+[![node](https://img.shields.io/node/v/hushenv)](https://www.npmjs.com/package/hushenv)
+
 Keeps your secrets hush-hush 🤫 — a local secret manager for the agent era, starting with your `.env`.
 
 Your `.env` files hold **references**, not secrets:
@@ -19,6 +24,8 @@ AI agents to read.
 ## Quickstart
 
 ```bash
+npm i -g hushenv
+
 hushenv init                       # master key -> OS keychain, empty vault
 hushenv set DB_PASSWORD            # hidden prompt
 hushenv set RESEND_KEY --stdin     # or pipe it in
@@ -40,6 +47,35 @@ hushenv run -f .env.local -- pnpm dev
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
 string. `{mysm.NAME}` and `{mysmtool.NAME}` are accepted as legacy aliases.
 
+## Use with your stack
+
+`hushenv run` injects resolved secrets into the environment of **any** child
+process — your app's language doesn't matter:
+
+```bash
+hushenv run -- <your dev command>
+```
+
+Per-stack recipes with the framework-specific details:
+
+| Stack | Guide |
+|---|---|
+| Next.js | [docs/nextjs.md](docs/nextjs.md) |
+| NestJS | [docs/nestjs.md](docs/nestjs.md) |
+| Express / plain Node | [docs/express.md](docs/express.md) |
+| Vite | [docs/vite.md](docs/vite.md) |
+| Python (FastAPI / Django / Flask) | [docs/python.md](docs/python.md) |
+| Go | [docs/go.md](docs/go.md) |
+| PHP / Laravel | [docs/php-laravel.md](docs/php-laravel.md) |
+| Ruby / Rails | [docs/ruby-rails.md](docs/ruby-rails.md) |
+| Rust | [docs/rust.md](docs/rust.md) |
+
+They all work for the same reason: every mainstream dotenv loader (Node
+dotenv, python-dotenv, godotenv, phpdotenv, dotenv-rails, dotenvy) refuses to
+overwrite environment variables that already exist — and hushenv sets the real
+values *before* your app starts. Your framework keeps its `.env` loading;
+the ref strings in the file are simply never used.
+
 ## Semantics
 
 - Multiple `-f` files: loaded in order, the **first** occurrence of a key wins.
@@ -48,6 +84,20 @@ string. `{mysm.NAME}` and `{mysmtool.NAME}` are accepted as legacy aliases.
 - Missing refs **fail fast** before your app starts, with the exact
   `hushenv set` commands to fix it. Exit code 2.
 - Exit codes: `0` ok · `1` error · `2` missing secret.
+
+## How it compares
+
+| | Plaintext on disk | `.env` safe to commit | Agent-safe `.env` | Works offline | Price |
+|---|---|---|---|---|---|
+| plain `.env` + dotenv | yes 😬 | no | no | yes | free |
+| **hushenv** | no — AES-256-GCM vault, key in OS keychain | yes — refs only | yes | yes | free |
+| dotenvx | no — ciphertext in `.env` | yes — ciphertext | partly — private key sits in `.env.keys` | yes | free core, paid sync |
+| 1Password `op run` | no | yes — `op://` refs | yes | mostly | subscription |
+| cloud secret managers | no | n/a | yes | no | usage-based |
+
+Honest take: if your team needs shared secrets **today**, dotenvx sync or a
+cloud manager solves that and hushenv doesn't yet — team sync is what
+hushenv Cloud (closed-source, paid) will add on top of this free core.
 
 ## No keychain? (CI, containers)
 
@@ -87,17 +137,11 @@ apps/cli              the hushenv CLI: ref resolution, run, prompts
 `vault-core` never imports anything env-file- or CLI-specific. Future
 surfaces (tray UI, MCP broker) sit on the same engine.
 
-## Development
+## Contributing
 
-```bash
-pnpm install
-pnpm build
-pnpm test
-pnpm --filter hushenv dev -- --help   # run from source
-```
-
-To use your dev build globally: `cd apps/cli && pnpm link --global`
-(run `pnpm setup` once first if pnpm complains about a global bin dir).
+PRs welcome — it's a small, readable codebase. Setup, tests, and how releases
+work are in [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are licensed
+under Apache-2.0.
 
 ## Roadmap
 
