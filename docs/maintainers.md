@@ -70,14 +70,29 @@ Settings → Code security and analysis — enable all of:
 - **Secret scanning** and **Push protection**
 - **Code scanning** is already wired via `.github/workflows/codeql.yml`
 
-### 4. (Optional) Scorecard token
+### 4. Actions permissions (required for the release PR)
+
+The release workflow uses the automatic `GITHUB_TOKEN` (you never create it), but
+the repository must let Actions open pull requests, or the "Version Packages" PR
+can't be created.
+
+Settings → Actions → General → **Workflow permissions**:
+
+- Leave the default token permission as-is — each workflow already requests the
+  exact scopes it needs via its `permissions:` block.
+- ✅ Tick **"Allow GitHub Actions to create and approve pull requests."**
+
+Without this, the workflow runs but fails to open the Version PR with a
+permissions error.
+
+### 5. (Optional) Scorecard token
 
 The OpenSSF Scorecard **Branch-Protection** check needs a read-only token. The
 workflow falls back to `GITHUB_TOKEN` without it (that one check is skipped).
 For a full score, create a fine-grained PAT (read-only on this repo,
 Administration: Read) and save it as the **`SCORECARD_TOKEN`** repository secret.
 
-### 5. npm Trusted Publisher (already configured)
+### 6. npm Trusted Publisher (already configured)
 
 Publishing uses npm **Trusted Publishing (OIDC)** — no tokens. The trusted
 publisher on npmjs.com is bound to this repo **and the workflow filename
