@@ -1,40 +1,70 @@
+# Release pipeline. Filename kept as publish.yml so the npm Trusted Publisher
+# binding (org/repo + workflow filename) does not need to be reconfigured.
+#
+# Flow:
+#   1. A push to main with a pending changeset -> changesets/action opens (or
+#      updates) the "Version Packages" PR. Nothing is published.
+#   2. Merging that PR bumps both package versions in lockstep and lands the
+#      CHANGELOGs on main. The next push has no changesets, so the publish step
+#      runs: it packs (pnpm pack rewrites workspace:* to the real version) and
+#      publishes both packages to npm with provenance via OIDC Trusted
+#      Publishing. Already-published versions are skipped, so re-runs are safe.
+#   3. After a real publish it creates the v<version> git tag and a GitHub
+#      Release with the CycloneDX SBOM attached.
 name: Publish Package
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+  workflow_dispatch:
 
-permissions:
-  id-token: write # Required for OIDC (npm Trusted Publisher)
-  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # version PR commits, tags, GitHub Releases
+      pull-requests: write # open/update the Version Packages PR
+      id-token: write # npm Trusted Publishing (OIDC) + provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
-      # version comes from the root package.json "packageManager" field
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'pnpm'
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm -r build
 
-      - name: Run Tests
+      - name: Run tests
         run: pnpm -r test
 
-      # pnpm pack rewrites workspace:* to the real version and runs prepack;
-      # npm publish (npm >= 11.5.1) performs the OIDC token exchange.
+      # Opens/updates the "Version Packages" PR when changesets are pending.
+      # No `publish` input: the actual npm publish stays on the proven pnpm
+      # pack path below so workspace:* is rewritten correctly.
+      - name: Create or update the Version Packages PR
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        with:
+          version: pnpm changeset version
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish @hushenv/vault-core
         working-directory: packages/vault-core
         run: |
@@ -55,4 +85,33 @@ jobs:
           else
             pnpm pack
             npm publish ./hushenv-$VERSION.tgz --provenance --access public
+          fi
+
+      # Only fires the first time a version reaches npm: tags v<version> and
+      # cuts a GitHub Release with a CycloneDX SBOM attached. Idempotent — the
+      # tag-existence check makes re-runs no-ops.
+      - name: Tag and release with SBOM
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./apps/cli/package.json').version")
+          if git rev-parse "v$VERSION" > /dev/null 2>&1; then
+            echo "v$VERSION already tagged; nothing to release."
+            exit 0
+          fi
+          if ! npm view "hushenv@$VERSION" version > /dev/null 2>&1; then
+            echo "hushenv@$VERSION is not on npm (no publish this run); skipping release."
+            exit 0
+          fi
+          pnpm dlx @cyclonedx/cdxgen@^11 -t pnpm -r -o sbom.cdx.json \
+            || echo "SBOM generation failed; continuing without it."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+          NOTES="Published \`hushenv@$VERSION\` and \`@hushenv/vault-core@$VERSION\` to npm with provenance. See apps/cli/CHANGELOG.md and packages/vault-core/CHANGELOG.md for details."
+          if [ -f sbom.cdx.json ]; then
+            gh release create "v$VERSION" --title "v$VERSION" --notes "$NOTES" sbom.cdx.json
+          else
+            gh release create "v$VERSION" --title "v$VERSION" --notes "$NOTES"
           fi

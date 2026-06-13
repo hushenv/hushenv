@@ -10,9 +10,13 @@ field — `corepack enable` handles it).
 
 ```bash
 pnpm install
+pnpm lint             # Biome: format + lint (use `pnpm format` to auto-fix)
+pnpm -r typecheck     # tsc --noEmit
 pnpm -r build
 pnpm -r test          # vitest, no keychain needed (tests use HUSHENV_MASTER_KEY)
 ```
+
+CI runs the same checks on every PR across Node 20 and 24 (Linux, Windows, macOS).
 
 Run the CLI from source:
 
@@ -44,16 +48,30 @@ asked to move them.
 
 Add tests with the change; `pnpm -r test` must be green.
 
+## Changesets
+
+Any PR that changes published behavior needs a changeset:
+
+```bash
+pnpm changeset
+```
+
+Pick the bump type — both packages move together (`fixed` lockstep), so a single
+choice versions both — and write a one-line summary. Commit the generated file
+in `.changeset/`. Docs-only or chore PRs don't need one.
+
 ## Releases (maintainers)
 
-Publishing is fully automated via npm Trusted Publishing — no tokens:
+Releases are automated with [Changesets](https://github.com/changesets/changesets)
+and npm Trusted Publishing — no tokens, no hand-edited versions, no manual tags:
 
-1. Bump `version` in `packages/vault-core/package.json` **and**
-   `apps/cli/package.json` (they ship in lockstep).
-2. Commit, then `git tag v0.x.y && git push && git push --tags`.
-3. The [publish workflow](.github/workflows/publish.yml) builds, tests, and
-   publishes both packages with provenance. Already-published versions are
-   skipped, so re-running is safe.
+1. On merge to `main`, the [publish workflow](.github/workflows/publish.yml)
+   opens (or updates) a **"Version Packages"** PR that bumps both
+   `package.json`s and rewrites the changelogs from the pending changesets.
+2. Merging that PR builds, tests, and publishes both packages to npm with
+   provenance (OIDC Trusted Publishing), tags `vX.Y.Z`, and cuts a GitHub
+   Release with a CycloneDX SBOM attached.
+3. Already-published versions are skipped, so re-runs are safe.
 
 ## License
 
