@@ -8,14 +8,14 @@ export interface SetOptions {
 export async function setCommand(
   name: string,
   positionalValue: string | undefined,
-  opts: SetOptions
+  opts: SetOptions,
 ): Promise<void> {
   let value: string;
   if (opts.stdin) {
     value = normalizeStdinValue(await readStdin());
   } else if (positionalValue !== undefined) {
     console.error(
-      'Warning: the value was passed on the command line and may be stored in your shell history.'
+      'Warning: the value was passed on the command line and may be stored in your shell history.',
     );
     console.error('Prefer `hushenv set NAME` (hidden prompt) or `--stdin`.');
     value = positionalValue;

@@ -13,12 +13,17 @@ export interface GetOptions {
 export async function getCommand(name: string, opts: GetOptions): Promise<void> {
   if (!opts.force) {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
-      console.error('x `hushenv get` reveals plaintext and requires an interactive terminal.');
+      console.error(
+        'x `hushenv get` reveals plaintext and requires an interactive terminal.',
+      );
       console.error('  Non-interactive callers must pass --force explicitly.');
       process.exitCode = 1;
       return;
     }
-    const ok = await confirm({ message: `Reveal "${name}" in plaintext?`, default: false });
+    const ok = await confirm({
+      message: `Reveal "${name}" in plaintext?`,
+      default: false,
+    });
     if (!ok) {
       console.error('Aborted.');
       process.exitCode = 1;

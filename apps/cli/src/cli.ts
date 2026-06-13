@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name('hushenv')
   .description(
-    'Local secret manager for the agent era.\nYour .env holds {hushenv.X} refs; plaintext exists only in child process memory.'
+    'Local secret manager for the agent era.\nYour .env holds {hushenv.X} refs; plaintext exists only in child process memory.',
   )
   .version('0.1.0')
   .enablePositionalOptions()

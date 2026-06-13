@@ -42,7 +42,9 @@ export function decryptValue(key: Buffer, name: string, blob: CipherBlob): strin
       decipher.final(),
     ]).toString('utf8');
   } catch {
-    throw new Error(`Failed to decrypt "${name}": wrong master key or tampered vault entry.`);
+    throw new Error(
+      `Failed to decrypt "${name}": wrong master key or tampered vault entry.`,
+    );
   }
 }
 

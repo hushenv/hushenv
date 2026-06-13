@@ -6,7 +6,10 @@ const lookup = (name: string): string | undefined =>
 
 describe('resolve', () => {
   it('resolves whole-value refs', () => {
-    const { resolved, missing } = resolveRefs({ RESEND_KEY: '{hushenv.RESEND_KEY}' }, lookup);
+    const { resolved, missing } = resolveRefs(
+      { RESEND_KEY: '{hushenv.RESEND_KEY}' },
+      lookup,
+    );
     expect(resolved.RESEND_KEY).toBe('rk_live_1');
     expect(missing).toEqual([]);
   });
@@ -14,7 +17,7 @@ describe('resolve', () => {
   it('resolves refs embedded inside larger strings', () => {
     const { resolved } = resolveRefs(
       { DATABASE_URL: 'postgres://app:{hushenv.DB_PASSWORD}@localhost:5432/db' },
-      lookup
+      lookup,
     );
     expect(resolved.DATABASE_URL).toBe('postgres://app:hunter2@localhost:5432/db');
   });
@@ -22,7 +25,7 @@ describe('resolve', () => {
   it('accepts mysm and mysmtool legacy aliases', () => {
     const { resolved } = resolveRefs(
       { A: '{mysm.DB_PASSWORD}', B: '{mysmtool.RESEND_KEY}' },
-      lookup
+      lookup,
     );
     expect(resolved.A).toBe('hunter2');
     expect(resolved.B).toBe('rk_live_1');
@@ -31,7 +34,7 @@ describe('resolve', () => {
   it('collects missing names instead of throwing', () => {
     const { resolved, missing } = resolveRefs(
       { A: '{hushenv.NOPE}', B: '{hushenv.ALSO_NOPE}', C: 'plain' },
-      lookup
+      lookup,
     );
     expect(missing.sort()).toEqual(['ALSO_NOPE', 'NOPE']);
     expect(resolved.A).toBe('{hushenv.NOPE}');
