@@ -37,11 +37,13 @@ jobs:
       - name: Lint & format check
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm -r typecheck
-
+      # Build first: apps/cli typechecks against @hushenv/vault-core's emitted
+      # .d.ts files, which only exist after the engine is built.
       - name: Build
         run: pnpm -r build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
 
       - name: Test
         run: pnpm -r test
