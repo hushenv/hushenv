@@ -7,13 +7,18 @@ export class NotInitializedError extends Error {
 
 export class SecretNotFoundError extends Error {
   constructor(public readonly secretName: string) {
-    super(`Secret "${secretName}" not found in the vault. Add it with: hushenv set ${secretName}`);
+    super(
+      `Secret "${secretName}" not found in the vault. Add it with: hushenv set ${secretName}`,
+    );
     this.name = 'SecretNotFoundError';
   }
 }
 
 export class KeychainUnavailableError extends Error {
-  constructor(message: string, public readonly fallbackKey: string) {
+  constructor(
+    message: string,
+    public readonly fallbackKey: string,
+  ) {
     super(message);
     this.name = 'KeychainUnavailableError';
   }

@@ -28,7 +28,7 @@ export function collectRefs(values: Record<string, string>): string[] {
  */
 export function resolveRefs(
   values: Record<string, string>,
-  lookup: (name: string) => string | undefined
+  lookup: (name: string) => string | undefined,
 ): ResolveResult {
   const missing = new Set<string>();
   const used = new Set<string>();

@@ -19,7 +19,9 @@ export function initCommand(): void {
     } catch (err) {
       if (err instanceof KeychainUnavailableError) {
         console.error(`x ${err.message}`);
-        console.error('\nFallback: add this to your shell profile, then re-run `hushenv init`:');
+        console.error(
+          '\nFallback: add this to your shell profile, then re-run `hushenv init`:',
+        );
         console.error(`  export HUSHENV_MASTER_KEY="${err.fallbackKey}"`);
         process.exitCode = 1;
         return;
@@ -30,7 +32,9 @@ export function initCommand(): void {
 
   const { created } = initVault();
   console.log(
-    created ? `* Created vault at ${vaultPath()}` : `Vault already exists at ${vaultPath()}`
+    created
+      ? `* Created vault at ${vaultPath()}`
+      : `Vault already exists at ${vaultPath()}`,
   );
   if (created) {
     console.log('\nNext steps:');

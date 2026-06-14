@@ -22,7 +22,9 @@ export function loadVault(): VaultFile {
   }
   const data = JSON.parse(fs.readFileSync(vaultPath(), 'utf8')) as VaultFile;
   if (data.version !== 1) {
-    throw new Error(`Unsupported vault version: ${String((data as { version: unknown }).version)}`);
+    throw new Error(
+      `Unsupported vault version: ${String((data as { version: unknown }).version)}`,
+    );
   }
   return data;
 }
@@ -39,7 +41,7 @@ export function saveVault(vault: VaultFile): void {
 export function assertValidName(name: string): void {
   if (!NAME_RE.test(name)) {
     throw new Error(
-      `Invalid secret name "${name}". Use letters, digits and underscores, not starting with a digit.`
+      `Invalid secret name "${name}". Use letters, digits and underscores, not starting with a digit.`,
     );
   }
 }
@@ -67,7 +69,11 @@ export function getSecretValue(name: string): string {
   return decryptValue(key, name, entry);
 }
 
-export function listSecrets(): Array<{ name: string; createdAt: string; updatedAt: string }> {
+export function listSecrets(): Array<{
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}> {
   const vault = loadVault();
   return Object.entries(vault.secrets)
     .map(([name, e]) => ({ name, createdAt: e.createdAt, updatedAt: e.updatedAt }))
@@ -78,7 +84,7 @@ export function listSecrets(): Array<{ name: string; createdAt: string; updatedA
 export function renameSecret(
   oldName: string,
   newName: string,
-  opts: { force?: boolean } = {}
+  opts: { force?: boolean } = {},
 ): void {
   assertValidName(newName);
   const key = getMasterKey();

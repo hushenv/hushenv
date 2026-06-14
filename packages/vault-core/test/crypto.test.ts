@@ -18,7 +18,9 @@ describe('crypto', () => {
 
   it('fails with the wrong key', () => {
     const blob = encryptValue(generateKey(), 'X', 'value');
-    expect(() => decryptValue(generateKey(), 'X', blob)).toThrow(/wrong master key|tampered/);
+    expect(() => decryptValue(generateKey(), 'X', blob)).toThrow(
+      /wrong master key|tampered/,
+    );
   });
 
   it('binds ciphertext to its name via AAD (no blob swapping)', () => {
@@ -32,6 +34,8 @@ describe('crypto', () => {
     const blob = encryptValue(key, 'X', 'value');
     const tag = Buffer.from(blob.tag, 'base64');
     tag[0] = tag[0]! ^ 0xff;
-    expect(() => decryptValue(key, 'X', { ...blob, tag: tag.toString('base64') })).toThrow();
+    expect(() =>
+      decryptValue(key, 'X', { ...blob, tag: tag.toString('base64') }),
+    ).toThrow();
   });
 });

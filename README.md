@@ -1,9 +1,11 @@
 # hushenv
 
 [![npm version](https://img.shields.io/npm/v/hushenv)](https://www.npmjs.com/package/hushenv)
+[![CI](https://github.com/hushenv/hushenv/actions/workflows/ci.yml/badge.svg)](https://github.com/hushenv/hushenv/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hushenv/hushenv/badge)](https://scorecard.dev/viewer/?uri=github.com/hushenv/hushenv)
 [![license](https://img.shields.io/npm/l/hushenv)](https://github.com/hushenv/hushenv/blob/main/LICENSE)
-[![publish](https://github.com/hushenv/hushenv/actions/workflows/publish.yml/badge.svg)](https://github.com/hushenv/hushenv/actions/workflows/publish.yml)
 [![node](https://img.shields.io/node/v/hushenv)](https://www.npmjs.com/package/hushenv)
+[![provenance](https://img.shields.io/badge/npm-provenance-blue)](https://www.npmjs.com/package/hushenv)
 
 Keeps your secrets hush-hush 🤫 — a local secret manager for the agent era, starting with your `.env`.
 

@@ -44,7 +44,7 @@ export function getMasterKey(): Buffer {
   }
   if (!stored) {
     throw new NotInitializedError(
-      'No master key found. Run `hushenv init` (or set HUSHENV_MASTER_KEY).'
+      'No master key found. Run `hushenv init` (or set HUSHENV_MASTER_KEY).',
     );
   }
   const buf = Buffer.from(stored, 'base64');
@@ -75,7 +75,7 @@ export function createAndStoreMasterKey(): void {
     const reason = err instanceof Error ? err.message : String(err);
     throw new KeychainUnavailableError(
       `Could not store the master key in the OS keychain (${reason}).`,
-      key.toString('base64')
+      key.toString('base64'),
     );
   }
 }

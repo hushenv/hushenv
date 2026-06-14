@@ -32,13 +32,16 @@ export function runCommand(files: string[], cmd: string[]): void {
   }
 
   const childEnv = { ...resolved, ...process.env };
-  const child = spawn(cmd[0] as string, cmd.slice(1), { stdio: 'inherit', env: childEnv });
+  const child = spawn(cmd[0] as string, cmd.slice(1), {
+    stdio: 'inherit',
+    env: childEnv,
+  });
 
   child.on('error', (err) => {
     console.error(`x Failed to start "${cmd[0]}": ${err.message}`);
     process.exitCode = 1;
   });
   child.on('exit', (code, signal) => {
-    process.exitCode = signal ? 1 : code ?? 1;
+    process.exitCode = signal ? 1 : (code ?? 1);
   });
 }

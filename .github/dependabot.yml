@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # npm dependencies across the workspace root and both packages.
+  - package-ecosystem: npm
+    directories:
+      - '/'
+      - '/apps/cli'
+      - '/packages/vault-core'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      # One PR for all non-major bumps to keep noise down.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+
+  # Keep the SHA-pinned GitHub Actions current.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions:
+        patterns:
+          - '*'
