@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "typescript": "^5.5.0",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.0"
   },
   "description": "hushenv engine: AES-256-GCM vault, OS keychain, name-bound encryption. No env-file or CLI knowledge.",
