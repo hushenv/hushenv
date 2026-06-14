@@ -11,11 +11,20 @@ updates:
       day: monday
     open-pull-requests-limit: 10
     groups:
-      # One PR for all non-major bumps to keep noise down.
-      minor-and-patch:
+      # One PR per directory for all non-major bumps to keep noise down.
+      npm-dependencies:
+        patterns:
+          - '*'
         update-types:
           - minor
           - patch
+    ignore:
+      # Upgrade these majors deliberately, not via automated PRs — they tend
+      # to introduce breaking type-checking changes.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     labels:
       - dependencies
 

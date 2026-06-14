@@ -1,16 +1,11 @@
 # Code owners are requested for review automatically on matching paths.
 # https://docs.github.com/articles/about-code-owners
-#
-# NOTE: replace @hushenv/maintainers below with your GitHub username
-# (e.g. @your-handle) or create a `maintainers` team in the hushenv org.
-# Until this resolves to a real user/team, GitHub shows a CODEOWNERS warning
-# but nothing breaks.
 
 # Everything
-*                       @hushenv/maintainers
+*                       @lasalasa
 
 # The crypto/vault engine — highest-sensitivity code.
-/packages/vault-core/   @hushenv/maintainers
+/packages/vault-core/   @lasalasa
 
 # Release, CI, and security automation.
-/.github/               @hushenv/maintainers
+/.github/               @lasalasa
