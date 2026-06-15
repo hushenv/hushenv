@@ -24,7 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.5.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.9"
   },
   "description": "hushenv engine: AES-256-GCM vault, OS keychain, name-bound encryption. No env-file or CLI knowledge.",
   "license": "Apache-2.0",
