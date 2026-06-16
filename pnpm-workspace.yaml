@@ -7,3 +7,7 @@ allowBuilds:
 onlyBuiltDependencies:
   - esbuild
   - "@napi-rs/keyring"
+overrides:
+  # Force a patched esbuild (dev-only, via tsx/vitest) — GHSA-gv7w-rqvm-qjhr,
+  # GHSA-g7r4-m6w7-qqqr. Not shipped in the published packages.
+  esbuild: ">=0.28.1"

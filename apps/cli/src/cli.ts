@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { NotInitializedError, SecretNotFoundError } from '@hushenv/vault-core';
 import { getCommand } from './commands/get.js';
@@ -9,6 +10,12 @@ import { rmCommand } from './commands/rm.js';
 import { runCommand } from './commands/run.js';
 import { setCommand } from './commands/set.js';
 
+// Read from the package manifest so --version never drifts from the release.
+// Resolves to apps/cli/package.json under both tsx (src/) and the build (dist/).
+const { version } = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+) as { version: string };
+
 const program = new Command();
 
 program
@@ -16,7 +23,7 @@ program
   .description(
     'Local secret manager for the agent era.\nYour .env holds {hushenv.X} refs; plaintext exists only in child process memory.',
   )
-  .version('0.1.0')
+  .version(version)
   .enablePositionalOptions()
   .showHelpAfterError();
 
