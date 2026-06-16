@@ -1,5 +1,15 @@
 # hushenv
 
+## 0.2.1
+
+### Patch Changes
+
+- [#11](https://github.com/hushenv/hushenv/pull/11) [`8cd7723`](https://github.com/hushenv/hushenv/commit/8cd77231ab99471904fc67c73e51bf7065d87f91) Thanks [@lasalasa](https://github.com/lasalasa)! - Fix `hushenv --version` to report the installed package version instead of a
+  hardcoded `0.1.0`. The version is now read from the package manifest at runtime,
+  so it can never drift from the published release again.
+- Updated dependencies []:
+  - @hushenv/vault-core@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
