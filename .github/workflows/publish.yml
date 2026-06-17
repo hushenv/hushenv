@@ -57,6 +57,7 @@ jobs:
       # No `publish` input: the actual npm publish stays on the proven pnpm
       # pack path below so workspace:* is rewritten correctly.
       - name: Create or update the Version Packages PR
+        id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
         with:
           version: pnpm changeset version
@@ -65,7 +66,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Publish only after the Version PR has merged (no pending changesets).
+      # During the run that merely opens the Version PR, changesets/action has
+      # already bumped package.json in the working tree — publishing here would
+      # ship that version before the Version PR is merged.
       - name: Publish @hushenv/vault-core
+        if: steps.changesets.outputs.hasChangesets == 'false'
         working-directory: packages/vault-core
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -77,6 +83,7 @@ jobs:
           fi
 
       - name: Publish hushenv
+        if: steps.changesets.outputs.hasChangesets == 'false'
         working-directory: apps/cli
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -91,6 +98,7 @@ jobs:
       # cuts a GitHub Release with a CycloneDX SBOM attached. Idempotent — the
       # tag-existence check makes re-runs no-ops.
       - name: Tag and release with SBOM
+        if: steps.changesets.outputs.hasChangesets == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
