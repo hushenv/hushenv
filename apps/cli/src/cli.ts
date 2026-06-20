@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { NotInitializedError, SecretNotFoundError } from '@hushenv/vault-core';
 import { getCommand } from './commands/get.js';
+import { importCommand } from './commands/import.js';
 import { initCommand } from './commands/init.js';
 import { lsCommand } from './commands/ls.js';
 import { mvCommand } from './commands/mv.js';
@@ -59,6 +60,25 @@ program
   .argument('<new>', 'new secret name')
   .option('--force', 'overwrite <new> if it already exists')
   .action(mvCommand);
+
+program
+  .command('import')
+  .description(
+    'Migrate plaintext values from an .env file into the vault, rewriting them to refs',
+  )
+  .option('-f, --file <path>', 'env file to import (default: .env)')
+  .option('--all', 'non-interactive: take heuristic defaults, no triage prompts')
+  .option('--dry-run', 'print the plan (imports/skips/conflicts) and change nothing')
+  .option('--force', 'on conflict (non-interactive): overwrite the vault value')
+  .option(
+    '--skip-existing',
+    'on conflict (non-interactive): keep the vault value, still rewrite the ref',
+  )
+  .option(
+    '--prefix <prefix>',
+    'namespace every imported name, e.g. DB_PASSWORD -> PREFIX_DB_PASSWORD',
+  )
+  .action(importCommand);
 
 program
   .command('run')

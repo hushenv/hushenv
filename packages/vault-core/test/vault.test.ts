@@ -11,6 +11,7 @@ import {
   listSecrets,
   renameSecret,
   setSecret,
+  setSecrets,
   vaultPath,
 } from '../src/index';
 
@@ -91,5 +92,20 @@ describe('vault', () => {
   it('rejects invalid names and empty values', () => {
     expect(() => setSecret('1BAD', 'x')).toThrow(/Invalid secret name/);
     expect(() => setSecret('OK', '')).toThrow(/empty value/);
+  });
+
+  it('setSecrets writes a batch and preserves createdAt of existing entries', () => {
+    setSecret('A', 'a1');
+    const before = listSecrets().find((s) => s.name === 'A')!;
+    setSecrets({ A: 'a2', B: 'b1' });
+    expect(getSecretValue('A')).toBe('a2');
+    expect(getSecretValue('B')).toBe('b1');
+    expect(listSecrets().find((s) => s.name === 'A')!.createdAt).toBe(before.createdAt);
+  });
+
+  it('setSecrets validates everything before any write (all-or-nothing)', () => {
+    expect(() => setSecrets({ GOOD: 'x', '1BAD': 'y' })).toThrow(/Invalid secret name/);
+    expect(() => setSecrets({ GOOD: 'x', EMPTY: '' })).toThrow(/empty value/);
+    expect(() => getSecretValue('GOOD')).toThrow(SecretNotFoundError);
   });
 });
