@@ -35,6 +35,28 @@ hushenv run -- pnpm dev            # resolves refs from ./.env, injects, runs
 hushenv run -f .env.local -- pnpm dev
 ```
 
+## Migrating an existing `.env`
+
+Already have a populated `.env`? `import` moves the real values into the vault
+and rewrites the file to refs, in one step:
+
+```bash
+hushenv import --dry-run            # preview: what gets vaulted vs left literal
+hushenv import                      # interactive: pick which values to vault
+hushenv import --all                # non-interactive: take the heuristics
+```
+
+It vaults values that look like secrets and leaves config (e.g.
+`NEXTAUTH_URL=http://localhost:3000`) literal — review the picks in the
+interactive prompt or with `--dry-run`. Re-running is a safe no-op (refs are
+skipped). Two things to know:
+
+- It vaults **whole values**. A secret embedded in a larger string (e.g. the
+  password inside a `DATABASE_URL`) is vaulted whole or skipped — split those by
+  hand into their own `{hushenv.X}` ref.
+- If the `.env` was ever committed, the old plaintext is in your git history —
+  **rotate** those secrets after importing.
+
 ## Commands
 
 | Command | What it does |
@@ -45,6 +67,7 @@ hushenv run -f .env.local -- pnpm dev
 | `hushenv ls` | List names and update dates. Never values. |
 | `hushenv rm <name>` | Delete a secret |
 | `hushenv mv <old> <new>` | Rename a secret (alias: `rename`). Re-encrypted under the new name; `--force` to overwrite. |
+| `hushenv import [-f file]` | Migrate plaintext values from an `.env` into the vault, rewriting them to refs. `--dry-run`, `--all`, `--force`/`--skip-existing`, `--prefix`. |
 | `hushenv run [-f file]... -- <cmd>` | Resolve refs and run the command with secrets injected |
 
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
@@ -148,6 +171,6 @@ under Apache-2.0.
 
 ## Roadmap
 
-v1: `import` (migrate an existing `.env`), append-only audit log,
-per-project grants with strict mode. v2: secret versions, rotation warnings,
-tray UI.
+v1: append-only audit log, per-project grants with strict mode (`import` —
+migrate an existing `.env` — has shipped). v2: secret versions, rotation
+warnings, tray UI.

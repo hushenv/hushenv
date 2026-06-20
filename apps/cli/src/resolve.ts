@@ -10,6 +10,11 @@ export interface ResolveResult {
   used: string[];
 }
 
+/** True if the value contains at least one {hushenv.NAME} ref. */
+export function hasRef(value: string): boolean {
+  return collectRefs({ value }).length > 0;
+}
+
 /** Collect every referenced secret name across all values. */
 export function collectRefs(values: Record<string, string>): string[] {
   const names = new Set<string>();

@@ -38,6 +38,10 @@ export function saveVault(vault: VaultFile): void {
   fs.renameSync(tmp, vaultPath());
 }
 
+export function isValidName(name: string): boolean {
+  return NAME_RE.test(name);
+}
+
 export function assertValidName(name: string): void {
   if (!NAME_RE.test(name)) {
     throw new Error(
@@ -58,6 +62,31 @@ export function setSecret(name: string, value: string): void {
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
+  saveVault(vault);
+}
+
+/**
+ * Batch sibling of setSecret: writes N secrets in a single atomic saveVault
+ * instead of N load/save cycles. All entries are validated before any mutation,
+ * so a bad name or empty value aborts before the vault is touched (all-or-nothing).
+ */
+export function setSecrets(values: Record<string, string>): void {
+  for (const [name, value] of Object.entries(values)) {
+    assertValidName(name);
+    if (value.length === 0)
+      throw new Error(`Refusing to store an empty value for "${name}".`);
+  }
+  const key = getMasterKey();
+  const vault = loadVault();
+  const now = new Date().toISOString();
+  for (const [name, value] of Object.entries(values)) {
+    const existing: SecretEntry | undefined = vault.secrets[name];
+    vault.secrets[name] = {
+      ...encryptValue(key, name, value),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+  }
   saveVault(vault);
 }
 
