@@ -1,5 +1,17 @@
 # hushenv
 
+## 0.3.1
+
+### Patch Changes
+
+- [#19](https://github.com/hushenv/hushenv/pull/19) [`bb0fae4`](https://github.com/hushenv/hushenv/commit/bb0fae44cead751b385c9fce84a963ffef3a2858) Thanks [@lasalasa](https://github.com/lasalasa)! - Documentation: the per-stack guide links and the CONTRIBUTING link in the README
+  now use absolute URLs, so they resolve on the npm package page and the `apps/cli`
+  GitHub view. Previously the relative `docs/*.md` links 404'd anywhere the README
+  was rendered outside the repo root (the README is copied into `apps/cli` for the
+  npm package).
+- Updated dependencies []:
+  - @hushenv/vault-core@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
