@@ -136,6 +136,11 @@ git checkout -- package.json
 Both packages are version-`fixed` (lockstep), so the target version is the same
 `$VERSION`. `vault-core` has no workspace deps and stages as-is.
 
+> `npm stage` requires **npm >= 11.15.0**, which is newer than the npm bundled
+> with Node 24. The workflow runs `npm install -g npm@<pinned>` before the stage
+> steps. If staging fails with `Unknown command: "stage"`, that pin is missing or
+> too old — bump it.
+
 ## Release runbook
 
 Releases are PR-driven, but going public now requires an explicit approval step
