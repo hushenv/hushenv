@@ -86,15 +86,15 @@ Per-stack recipes with the framework-specific details:
 
 | Stack | Guide |
 |---|---|
-| Next.js | [docs/nextjs.md](docs/nextjs.md) |
-| NestJS | [docs/nestjs.md](docs/nestjs.md) |
-| Express / plain Node | [docs/express.md](docs/express.md) |
-| Vite | [docs/vite.md](docs/vite.md) |
-| Python (FastAPI / Django / Flask) | [docs/python.md](docs/python.md) |
-| Go | [docs/go.md](docs/go.md) |
-| PHP / Laravel | [docs/php-laravel.md](docs/php-laravel.md) |
-| Ruby / Rails | [docs/ruby-rails.md](docs/ruby-rails.md) |
-| Rust | [docs/rust.md](docs/rust.md) |
+| Next.js | [docs/nextjs.md](https://github.com/hushenv/hushenv/blob/main/docs/nextjs.md) |
+| NestJS | [docs/nestjs.md](https://github.com/hushenv/hushenv/blob/main/docs/nestjs.md) |
+| Express / plain Node | [docs/express.md](https://github.com/hushenv/hushenv/blob/main/docs/express.md) |
+| Vite | [docs/vite.md](https://github.com/hushenv/hushenv/blob/main/docs/vite.md) |
+| Python (FastAPI / Django / Flask) | [docs/python.md](https://github.com/hushenv/hushenv/blob/main/docs/python.md) |
+| Go | [docs/go.md](https://github.com/hushenv/hushenv/blob/main/docs/go.md) |
+| PHP / Laravel | [docs/php-laravel.md](https://github.com/hushenv/hushenv/blob/main/docs/php-laravel.md) |
+| Ruby / Rails | [docs/ruby-rails.md](https://github.com/hushenv/hushenv/blob/main/docs/ruby-rails.md) |
+| Rust | [docs/rust.md](https://github.com/hushenv/hushenv/blob/main/docs/rust.md) |
 
 They all work for the same reason: every mainstream dotenv loader (Node
 dotenv, python-dotenv, godotenv, phpdotenv, dotenv-rails, dotenvy) refuses to
@@ -166,7 +166,7 @@ surfaces (tray UI, MCP broker) sit on the same engine.
 ## Contributing
 
 PRs welcome — it's a small, readable codebase. Setup, tests, and how releases
-work are in [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are licensed
+work are in [CONTRIBUTING.md](https://github.com/hushenv/hushenv/blob/main/CONTRIBUTING.md). Contributions are licensed
 under Apache-2.0.
 
 ## Roadmap
