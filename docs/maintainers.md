@@ -100,18 +100,46 @@ publisher on npmjs.com is bound to this repo **and the workflow filename
 its behavior changed. If you ever rename the workflow, update the trusted
 publisher config for **both** `hushenv` and `@hushenv/vault-core` on npmjs.com.
 
-## Why the publish path still uses `pnpm pack`
+**Allowed actions: stage-only.** Each trusted publisher's "Allowed actions" is
+set to **"Allow npm stage publish"** only (not "Allow npm publish"). This forces
+every CI release through staging, so nothing reaches the public registry without
+a maintainer approving it with 2FA (see the runbook below).
 
-We use Changesets for versioning and the changelog, but the actual publish stays
-on `pnpm pack` + `npm publish --provenance` rather than `changeset publish`.
-`pnpm pack` rewrites the `workspace:*` dependency in `hushenv` to the real
-`@hushenv/vault-core` version; `npm publish` (which `changeset publish` calls)
-does not. Keeping the proven pack path avoids shipping a broken `workspace:*`
-range to npm.
+If you ever migrate the allowed-actions setting, do it in this order or a release
+will fail (the publisher must be allowed to stage before the workflow stages):
+
+1. On npmjs.com, **add** "Allow npm stage publish" while keeping "Allow npm
+   publish" — for both packages. Non-breaking.
+2. Merge the workflow change that switches `npm publish` → `npm stage publish`.
+3. Run one release end to end and confirm staging + approval work.
+4. **Then** uncheck "Allow npm publish" on both packages (full stage-only).
+
+Roll back by re-ticking "Allow npm publish" and reverting the workflow change.
+
+## How the `workspace:*` rewrite works (no more `pnpm pack`)
+
+`hushenv` depends on `@hushenv/vault-core` as `workspace:*`, which must be
+rewritten to the concrete version before publishing or the published package is
+broken. We used to get this for free from `pnpm pack` (it rewrites `workspace:*`,
+which `changeset publish` does not). But `npm stage publish` stages the **current
+directory** and does **not** accept a tarball, so the pack path no longer applies.
+
+Instead, the workflow rewrites the dependency in place before staging and
+restores it afterward:
+
+```bash
+node -e "const f='./package.json',p=require(f);p.dependencies['@hushenv/vault-core']='$VERSION';require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+npm stage publish --provenance --access public
+git checkout -- package.json
+```
+
+Both packages are version-`fixed` (lockstep), so the target version is the same
+`$VERSION`. `vault-core` has no workspace deps and stages as-is.
 
 ## Release runbook
 
-Day to day there's almost nothing to do — releases are PR-driven:
+Releases are PR-driven, but going public now requires an explicit approval step
+(staged publishing) — CI never makes a version installable on its own.
 
 1. **During development:** every user-facing PR includes a changeset
    (`pnpm changeset`). Both packages are `fixed` in lockstep, so one bump choice
@@ -120,15 +148,23 @@ Day to day there's almost nothing to do — releases are PR-driven:
    opens or updates a **"Version Packages"** PR that bumps the versions and
    rewrites the changelogs.
 3. **Cut the release:** review and **merge the "Version Packages" PR**. The
-   workflow then:
-   - builds + tests,
-   - publishes `hushenv` and `@hushenv/vault-core` to npm with provenance,
-   - tags `vX.Y.Z` and creates a GitHub Release with a CycloneDX SBOM attached.
-4. **Verify:** the npm pages show the new version with a provenance badge, and
+   workflow then builds + tests and **stages** `hushenv` and `@hushenv/vault-core`
+   to npm with provenance. **The packages are not public yet.**
+4. **Review the staged packages** (needs 2FA on your account):
+   - `npm stage list` — see what's staged; grab each `<stage-id>`.
+   - `npm stage view <stage-id>` / `npm stage download <stage-id>` to inspect,
+     or use the **Staged Packages** tab on npmjs.com.
+5. **Approve** with 2FA — for **both** packages:
+   - `npm stage approve <stage-id>` (or the **Approve** button on npmjs.com).
+   - This is the moment they become installable.
+6. **Tag + GitHub Release:** re-run the workflow (Actions → **Publish Package** →
+   **Run workflow**). Now the versions are live on npm, so it creates the
+   `vX.Y.Z` tag and the GitHub Release with the CycloneDX SBOM. Idempotent.
+7. **Verify:** the npm pages show the new version with a provenance badge, and
    `npm i -g hushenv@latest` works.
 
-Re-running the workflow is safe: already-published versions and existing tags are
-skipped.
+Re-running the workflow is safe: already-published **and already-staged** versions
+are skipped, and existing tags are no-ops.
 
 ### Manual fallback
 
@@ -137,7 +173,7 @@ If you ever need to version locally (CI down):
 ```bash
 GITHUB_TOKEN=<token> pnpm changeset version   # bumps + writes changelogs
 git commit -am "chore: version packages"
-# push to main and let the workflow publish, or as a last resort:
+# push to main and let the workflow stage (then approve), or as a last resort:
 pnpm -r build && pnpm -r test
-# (publishing by hand requires npm auth; prefer the CI OIDC path)
+# (staging by hand requires npm auth + 2FA; prefer the CI OIDC path)
 ```
