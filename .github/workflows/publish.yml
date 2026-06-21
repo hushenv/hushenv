@@ -1,16 +1,23 @@
 # Release pipeline. Filename kept as publish.yml so the npm Trusted Publisher
 # binding (org/repo + workflow filename) does not need to be reconfigured.
 #
+# Publishing is STAGED: CI never makes a version public on its own. It stages
+# the tarballs; a maintainer reviews and approves them with 2FA, and only then
+# are they installable. See docs/maintainers.md for the approval runbook.
+#
 # Flow:
 #   1. A push to main with a pending changeset -> changesets/action opens (or
-#      updates) the "Version Packages" PR. Nothing is published.
+#      updates) the "Version Packages" PR. Nothing is staged.
 #   2. Merging that PR bumps both package versions in lockstep and lands the
-#      CHANGELOGs on main. The next push has no changesets, so the publish step
-#      runs: it packs (pnpm pack rewrites workspace:* to the real version) and
-#      publishes both packages to npm with provenance via OIDC Trusted
-#      Publishing. Already-published versions are skipped, so re-runs are safe.
-#   3. After a real publish it creates the v<version> git tag and a GitHub
-#      Release with the CycloneDX SBOM attached.
+#      CHANGELOGs on main. The next push has no changesets, so the stage step
+#      runs: it stages both packages to npm with provenance via OIDC Trusted
+#      Publishing. Already-published or already-staged versions are skipped, so
+#      re-runs are safe. The packages are NOT public yet.
+#   3. A maintainer reviews (`npm stage list/view`) and approves with 2FA
+#      (`npm stage approve <stage-id>`) for both packages - off-CI.
+#   4. Re-run this workflow (Actions -> Run workflow / workflow_dispatch). Now
+#      the versions are live on npm, so it creates the v<version> git tag and a
+#      GitHub Release with the CycloneDX SBOM attached. Idempotent.
 name: Publish Package
 
 on:
@@ -66,37 +73,52 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Publish only after the Version PR has merged (no pending changesets).
+      # Stage only after the Version PR has merged (no pending changesets).
       # During the run that merely opens the Version PR, changesets/action has
-      # already bumped package.json in the working tree — publishing here would
-      # ship that version before the Version PR is merged.
-      - name: Publish @hushenv/vault-core
+      # already bumped package.json in the working tree — staging here would
+      # stage that version before the Version PR is merged.
+      #
+      # `npm stage publish` stages the current directory and does NOT accept a
+      # tarball argument, so the old `pnpm pack` path (which rewrote workspace:*)
+      # can't be reused. vault-core has no workspace deps and stages as-is;
+      # hushenv's `@hushenv/vault-core: workspace:*` is rewritten to the concrete
+      # version before staging and restored after. Both packages are version-
+      # fixed (lockstep), so that version is the same $VERSION.
+      - name: Stage @hushenv/vault-core
         if: steps.changesets.outputs.hasChangesets == 'false'
         working-directory: packages/vault-core
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@hushenv/vault-core@$VERSION" version > /dev/null 2>&1; then
             echo "@hushenv/vault-core@$VERSION already published, skipping."
+          elif npm stage list "@hushenv/vault-core" --json 2>/dev/null | grep -q "\"$VERSION\""; then
+            echo "@hushenv/vault-core@$VERSION already staged, skipping."
           else
-            pnpm pack
-            npm publish ./hushenv-vault-core-$VERSION.tgz --provenance --access public
+            npm stage publish --provenance --access public
           fi
 
-      - name: Publish hushenv
+      - name: Stage hushenv
         if: steps.changesets.outputs.hasChangesets == 'false'
         working-directory: apps/cli
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if npm view "hushenv@$VERSION" version > /dev/null 2>&1; then
             echo "hushenv@$VERSION already published, skipping."
+          elif npm stage list "hushenv" --json 2>/dev/null | grep -q "\"$VERSION\""; then
+            echo "hushenv@$VERSION already staged, skipping."
           else
-            pnpm pack
-            npm publish ./hushenv-$VERSION.tgz --provenance --access public
+            # Rewrite workspace:* -> concrete version so the staged tarball resolves.
+            node -e "const f='./package.json',p=require(f);p.dependencies['@hushenv/vault-core']='$VERSION';require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+            npm stage publish --provenance --access public
+            git checkout -- package.json
           fi
 
-      # Only fires the first time a version reaches npm: tags v<version> and
-      # cuts a GitHub Release with a CycloneDX SBOM attached. Idempotent — the
-      # tag-existence check makes re-runs no-ops.
+      # Only fires once a version is actually live on npm — i.e. AFTER a
+      # maintainer has approved the staged packages (2FA). It is skipped on the
+      # staging run (the version isn't public yet) and runs on the post-approval
+      # workflow_dispatch re-run: tags v<version> and cuts a GitHub Release with a
+      # CycloneDX SBOM attached. Idempotent — the tag-existence check makes
+      # re-runs no-ops.
       - name: Tag and release with SBOM
         if: steps.changesets.outputs.hasChangesets == 'false'
         env:
