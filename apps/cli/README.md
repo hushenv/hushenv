@@ -1,9 +1,11 @@
 # hushenv
 
 [![npm version](https://img.shields.io/npm/v/hushenv)](https://www.npmjs.com/package/hushenv)
+[![CI](https://github.com/hushenv/hushenv/actions/workflows/ci.yml/badge.svg)](https://github.com/hushenv/hushenv/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hushenv/hushenv/badge)](https://scorecard.dev/viewer/?uri=github.com/hushenv/hushenv)
 [![license](https://img.shields.io/npm/l/hushenv)](https://github.com/hushenv/hushenv/blob/main/LICENSE)
-[![publish](https://github.com/hushenv/hushenv/actions/workflows/publish.yml/badge.svg)](https://github.com/hushenv/hushenv/actions/workflows/publish.yml)
 [![node](https://img.shields.io/node/v/hushenv)](https://www.npmjs.com/package/hushenv)
+[![provenance](https://img.shields.io/badge/npm-provenance-blue)](https://www.npmjs.com/package/hushenv)
 
 Keeps your secrets hush-hush 🤫 — a local secret manager for the agent era, starting with your `.env`.
 
@@ -33,6 +35,28 @@ hushenv run -- pnpm dev            # resolves refs from ./.env, injects, runs
 hushenv run -f .env.local -- pnpm dev
 ```
 
+## Migrating an existing `.env`
+
+Already have a populated `.env`? `import` moves the real values into the vault
+and rewrites the file to refs, in one step:
+
+```bash
+hushenv import --dry-run            # preview: what gets vaulted vs left literal
+hushenv import                      # interactive: pick which values to vault
+hushenv import --all                # non-interactive: take the heuristics
+```
+
+It vaults values that look like secrets and leaves config (e.g.
+`NEXTAUTH_URL=http://localhost:3000`) literal — review the picks in the
+interactive prompt or with `--dry-run`. Re-running is a safe no-op (refs are
+skipped). Two things to know:
+
+- It vaults **whole values**. A secret embedded in a larger string (e.g. the
+  password inside a `DATABASE_URL`) is vaulted whole or skipped — split those by
+  hand into their own `{hushenv.X}` ref.
+- If the `.env` was ever committed, the old plaintext is in your git history —
+  **rotate** those secrets after importing.
+
 ## Commands
 
 | Command | What it does |
@@ -43,6 +67,7 @@ hushenv run -f .env.local -- pnpm dev
 | `hushenv ls` | List names and update dates. Never values. |
 | `hushenv rm <name>` | Delete a secret |
 | `hushenv mv <old> <new>` | Rename a secret (alias: `rename`). Re-encrypted under the new name; `--force` to overwrite. |
+| `hushenv import [-f file]` | Migrate plaintext values from an `.env` into the vault, rewriting them to refs. `--dry-run`, `--all`, `--force`/`--skip-existing`, `--prefix`. |
 | `hushenv run [-f file]... -- <cmd>` | Resolve refs and run the command with secrets injected |
 
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
@@ -61,15 +86,15 @@ Per-stack recipes with the framework-specific details:
 
 | Stack | Guide |
 |---|---|
-| Next.js | [docs/nextjs.md](docs/nextjs.md) |
-| NestJS | [docs/nestjs.md](docs/nestjs.md) |
-| Express / plain Node | [docs/express.md](docs/express.md) |
-| Vite | [docs/vite.md](docs/vite.md) |
-| Python (FastAPI / Django / Flask) | [docs/python.md](docs/python.md) |
-| Go | [docs/go.md](docs/go.md) |
-| PHP / Laravel | [docs/php-laravel.md](docs/php-laravel.md) |
-| Ruby / Rails | [docs/ruby-rails.md](docs/ruby-rails.md) |
-| Rust | [docs/rust.md](docs/rust.md) |
+| Next.js | [docs/nextjs.md](https://github.com/hushenv/hushenv/blob/main/docs/nextjs.md) |
+| NestJS | [docs/nestjs.md](https://github.com/hushenv/hushenv/blob/main/docs/nestjs.md) |
+| Express / plain Node | [docs/express.md](https://github.com/hushenv/hushenv/blob/main/docs/express.md) |
+| Vite | [docs/vite.md](https://github.com/hushenv/hushenv/blob/main/docs/vite.md) |
+| Python (FastAPI / Django / Flask) | [docs/python.md](https://github.com/hushenv/hushenv/blob/main/docs/python.md) |
+| Go | [docs/go.md](https://github.com/hushenv/hushenv/blob/main/docs/go.md) |
+| PHP / Laravel | [docs/php-laravel.md](https://github.com/hushenv/hushenv/blob/main/docs/php-laravel.md) |
+| Ruby / Rails | [docs/ruby-rails.md](https://github.com/hushenv/hushenv/blob/main/docs/ruby-rails.md) |
+| Rust | [docs/rust.md](https://github.com/hushenv/hushenv/blob/main/docs/rust.md) |
 
 They all work for the same reason: every mainstream dotenv loader (Node
 dotenv, python-dotenv, godotenv, phpdotenv, dotenv-rails, dotenvy) refuses to
@@ -141,11 +166,11 @@ surfaces (tray UI, MCP broker) sit on the same engine.
 ## Contributing
 
 PRs welcome — it's a small, readable codebase. Setup, tests, and how releases
-work are in [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are licensed
+work are in [CONTRIBUTING.md](https://github.com/hushenv/hushenv/blob/main/CONTRIBUTING.md). Contributions are licensed
 under Apache-2.0.
 
 ## Roadmap
 
-v1: `import` (migrate an existing `.env`), append-only audit log,
-per-project grants with strict mode. v2: secret versions, rotation warnings,
-tray UI.
+v1: append-only audit log, per-project grants with strict mode (`import` —
+migrate an existing `.env` — has shipped). v2: secret versions, rotation
+warnings, tray UI.
