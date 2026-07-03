@@ -25,6 +25,13 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Dev-only transitive dep: Changesets -> @manypkg/get-packages ->
+      # read-yaml-file@1.1.0 pins js-yaml 3.x. The fix (4.2.0) can't be forced —
+      # read-yaml-file calls js-yaml.safeLoad, removed in 4.x. Not shipped to
+      # users. No update-types here, so this also silences the recurring
+      # "security_update_not_possible" job. Revisit if Changesets drops
+      # read-yaml-file.
+      - dependency-name: js-yaml
     labels:
       - dependencies
 
