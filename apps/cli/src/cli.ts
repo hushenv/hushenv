@@ -5,6 +5,7 @@ import { NotInitializedError, SecretNotFoundError } from '@hushenv/vault-core';
 import { getCommand } from './commands/get.js';
 import { importCommand } from './commands/import.js';
 import { initCommand } from './commands/init.js';
+import { logCommand } from './commands/log.js';
 import { lsCommand } from './commands/ls.js';
 import { mvCommand } from './commands/mv.js';
 import { rmCommand } from './commands/rm.js';
@@ -49,6 +50,14 @@ program
   .action(getCommand);
 
 program.command('ls').description('List secret names (never values)').action(lsCommand);
+
+program
+  .command('log')
+  .description('Show the append-only audit log (names/metadata only, never values)')
+  .option('--tail <n>', 'show only the last n entries')
+  .option('--verify', 'verify the tamper-evident hash chain (needs the master key)')
+  .option('--json', 'output raw JSON lines')
+  .action(logCommand);
 
 program.command('rm').description('Delete a secret').argument('<name>').action(rmCommand);
 

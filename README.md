@@ -69,6 +69,7 @@ skipped). Two things to know:
 | `hushenv mv <old> <new>` | Rename a secret (alias: `rename`). Re-encrypted under the new name; `--force` to overwrite. |
 | `hushenv import [-f file]` | Migrate plaintext values from an `.env` into the vault, rewriting them to refs. `--dry-run`, `--all`, `--force`/`--skip-existing`, `--prefix`. |
 | `hushenv run [-f file]... -- <cmd>` | Resolve refs and run the command with secrets injected |
+| `hushenv log [--verify]` | Show the append-only audit log (names/metadata, never values); `--verify` checks the tamper-evident chain. `--tail <n>`, `--json`. |
 
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
 string. `{mysm.NAME}` and `{mysmtool.NAME}` are accepted as legacy aliases.
@@ -152,6 +153,27 @@ What it does **not** protect against:
   deny rule, e.g. `Bash(hushenv get*)` in Claude Code settings
 - Malware running as your user with an unlocked keychain — same limit as any
   local secret manager
+- Deletion or truncation of the audit log by anything with filesystem access —
+  see below
+
+## Audit log
+
+Every action (`init`/`set`/`get`/`rm`/`mv`/`import`/`run`) is appended to
+`~/.hushenv/audit.log` — **names and metadata only, never secret values**.
+
+```bash
+hushenv log                # recent activity (never values)
+hushenv log --verify       # check the tamper-evident chain
+```
+
+Each entry is chained to the previous one with an **HMAC-SHA256 keyed by your
+master key**, so entries can't be forged or edited without the key (which lives
+in your OS keychain). Honest limit: the chain proves *contents* weren't altered,
+but it can't stop something with filesystem access from **deleting or
+truncating** the log — the same "malware running as you" boundary above. Real
+deletion-resistance needs an off-box anchor (a trusted external timestamp or
+remote append-only collection); that belongs to hushenv Cloud, not the offline
+core.
 
 ## Repo layout
 
@@ -171,6 +193,5 @@ under Apache-2.0.
 
 ## Roadmap
 
-v1: append-only audit log, per-project grants with strict mode (`import` —
-migrate an existing `.env` — has shipped). v2: secret versions, rotation
-warnings, tray UI.
+v1: per-project grants with strict mode (`import` and the append-only audit log
+have shipped). v2: secret versions, rotation warnings, tray UI.
