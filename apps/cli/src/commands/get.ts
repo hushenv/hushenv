@@ -1,5 +1,6 @@
 import { confirm } from '@inquirer/prompts';
 import { getSecretValue } from '@hushenv/vault-core';
+import { recordAudit } from '../audit.js';
 
 export interface GetOptions {
   force?: boolean;
@@ -31,4 +32,5 @@ export async function getCommand(name: string, opts: GetOptions): Promise<void> 
     }
   }
   process.stdout.write(getSecretValue(name) + '\n');
+  recordAudit('get', { name, meta: { force: !!opts.force } });
 }

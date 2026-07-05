@@ -8,6 +8,7 @@ import {
   listSecrets,
   setSecrets,
 } from '@hushenv/vault-core';
+import { recordAudit } from '../audit.js';
 import { rewriteEnv, writeEnvFile } from '../env-rewrite.js';
 import { hasRef } from '../resolve.js';
 
@@ -208,6 +209,15 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
     }
   }
   writeEnvFile(file, rewriteEnv(content, refs));
+
+  recordAudit('import', {
+    meta: {
+      file,
+      imported: importedCount,
+      alreadyInVault: alreadyCount,
+      refs: Object.keys(refs).length,
+    },
+  });
 
   console.log(
     `* Imported ${importedCount} secret(s), ${alreadyCount} already in vault, ` +

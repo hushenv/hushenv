@@ -9,3 +9,11 @@ export function hushenvHome(): string {
 export function vaultPath(): string {
   return path.join(hushenvHome(), 'vault.json');
 }
+
+export function auditPath(): string {
+  return path.join(hushenvHome(), 'audit.log');
+}
+
+export function auditLockPath(): string {
+  return path.join(hushenvHome(), 'audit.log.lock');
+}

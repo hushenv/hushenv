@@ -1,5 +1,7 @@
+import fs from 'node:fs';
 import spawn from 'cross-spawn';
 import { decryptValue, getMasterKey, loadVault } from '@hushenv/vault-core';
+import { recordAudit } from '../audit.js';
 import { loadEnvFiles } from '../env-files.js';
 import { resolveRefs } from '../resolve.js';
 
@@ -17,7 +19,7 @@ export function runCommand(files: string[], cmd: string[]): void {
 
   const key = getMasterKey();
   const vault = loadVault();
-  const { resolved, missing } = resolveRefs(raw, (name) => {
+  const { resolved, missing, used } = resolveRefs(raw, (name) => {
     const entry = vault.secrets[name];
     return entry ? decryptValue(key, name, entry) : undefined;
   });
@@ -30,6 +32,14 @@ export function runCommand(files: string[], cmd: string[]): void {
     process.exitCode = 2;
     return;
   }
+
+  let project: string;
+  try {
+    project = fs.realpathSync(process.cwd());
+  } catch {
+    project = process.cwd();
+  }
+  recordAudit('run', { project, meta: { count: used.length, names: used } });
 
   const childEnv = { ...resolved, ...process.env };
   const child = spawn(cmd[0] as string, cmd.slice(1), {

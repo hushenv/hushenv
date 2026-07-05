@@ -1,5 +1,6 @@
 import { password } from '@inquirer/prompts';
 import { setSecret } from '@hushenv/vault-core';
+import { recordAudit } from '../audit.js';
 
 export interface SetOptions {
   stdin?: boolean;
@@ -23,6 +24,7 @@ export async function setCommand(
     value = await password({ message: `Value for ${name}:`, mask: '*' });
   }
   setSecret(name, value);
+  recordAudit('set', { name });
   console.log(`* Stored ${name} (encrypted).`);
 }
 

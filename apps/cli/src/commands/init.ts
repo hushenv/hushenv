@@ -6,6 +6,7 @@ import {
   masterKeyFromEnv,
   vaultPath,
 } from '@hushenv/vault-core';
+import { recordAudit } from '../audit.js';
 
 export function initCommand(): void {
   if (masterKeyFromEnv()) {
@@ -31,6 +32,7 @@ export function initCommand(): void {
   }
 
   const { created } = initVault();
+  recordAudit('init', { meta: { created } });
   console.log(
     created
       ? `* Created vault at ${vaultPath()}`
