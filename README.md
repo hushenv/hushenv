@@ -70,6 +70,10 @@ skipped). Two things to know:
 | `hushenv import [-f file]` | Migrate plaintext values from an `.env` into the vault, rewriting them to refs. `--dry-run`, `--all`, `--force`/`--skip-existing`, `--prefix`. |
 | `hushenv run [-f file]... -- <cmd>` | Resolve refs and run the command with secrets injected |
 | `hushenv log [--verify]` | Show the append-only audit log (names/metadata, never values); `--verify` checks the tamper-evident chain. `--tail <n>`, `--json`. |
+| `hushenv grant <name...>` | Allow this project (cwd) to resolve these secrets at `run` time. `--project <dir>` to target another. |
+| `hushenv revoke <name...>` | Remove secrets from this project's grant list. `--project <dir>`. |
+| `hushenv grants` | List per-project grants (never values). |
+| `hushenv strict [on\|off]` | Show or set strict mode — blocks projects that have no grants at `run` time. |
 
 Reference syntax: `{hushenv.NAME}` — whole-value or embedded inside a larger
 string. `{mysm.NAME}` and `{mysmtool.NAME}` are accepted as legacy aliases.
@@ -144,11 +148,11 @@ What this protects against:
 - Secrets leaking into git history
 - Vault file theft without the OS keychain (ciphertext only)
 - Ciphertext swapping between entries (AES-GCM AAD binds value to name)
+- A project resolving secrets it shouldn't — with per-project grants (and
+  `strict on`), `hushenv run` in a project only resolves its granted secrets
 
 What it does **not** protect against:
 
-- `hushenv run -- env` prints that project's resolved secrets — scoping
-  arrives with per-project grants in v1
 - `hushenv get --force` from a non-interactive shell — pair it with an agent
   deny rule, e.g. `Bash(hushenv get*)` in Claude Code settings
 - Malware running as your user with an unlocked keychain — same limit as any
@@ -156,10 +160,35 @@ What it does **not** protect against:
 - Deletion or truncation of the audit log by anything with filesystem access —
   see below
 
+## Per-project grants
+
+By default any project can resolve any secret. Grants scope that: authorize which
+secrets a given **project directory** may inject at `run` time.
+
+```bash
+hushenv grant DB_PASSWORD RESEND_KEY   # allow these in THIS directory
+hushenv run -- pnpm dev                # resolves only granted secrets; others -> exit 2
+hushenv grants                         # list project -> names (never values)
+hushenv revoke DB_PASSWORD             # remove one (revoking all un-scopes the project)
+```
+
+- **Exact directory.** A grant applies to the exact dir it was made in
+  (canonical path) — in a monorepo, grant per package. `--project <dir>` targets
+  another directory.
+- **Allow-list, enforced immediately.** Once a project has any grant, `run` there
+  resolves *only* its granted secrets.
+- **`strict` for everything else.** Projects with no grants follow a global
+  setting: `hushenv strict off` (default) resolves freely; `hushenv strict on`
+  blocks any project until you grant it. Turn it on for global lockdown.
+
+Grants govern `run` (secret injection). `hushenv get` is unchanged — it's an
+explicit human action behind the TTY + confirm gate.
+
 ## Audit log
 
-Every action (`init`/`set`/`get`/`rm`/`mv`/`import`/`run`) is appended to
-`~/.hushenv/audit.log` — **names and metadata only, never secret values**.
+Every action (`init`/`set`/`get`/`rm`/`mv`/`import`/`run`/`grant`/`revoke`) is
+appended to `~/.hushenv/audit.log` — **names and metadata only, never secret
+values**.
 
 ```bash
 hushenv log                # recent activity (never values)
@@ -193,5 +222,6 @@ under Apache-2.0.
 
 ## Roadmap
 
-v1: per-project grants with strict mode (`import` and the append-only audit log
-have shipped). v2: secret versions, rotation warnings, tray UI.
+v1 is feature-complete: `import`, the append-only audit log, and per-project
+grants with strict mode have all shipped. v2: secret versions, rotation warnings,
+tray UI.

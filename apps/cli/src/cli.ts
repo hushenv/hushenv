@@ -3,14 +3,18 @@ import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { NotInitializedError, SecretNotFoundError } from '@hushenv/vault-core';
 import { getCommand } from './commands/get.js';
+import { grantCommand } from './commands/grant.js';
+import { grantsCommand } from './commands/grants.js';
 import { importCommand } from './commands/import.js';
 import { initCommand } from './commands/init.js';
 import { logCommand } from './commands/log.js';
 import { lsCommand } from './commands/ls.js';
 import { mvCommand } from './commands/mv.js';
+import { revokeCommand } from './commands/revoke.js';
 import { rmCommand } from './commands/rm.js';
 import { runCommand } from './commands/run.js';
 import { setCommand } from './commands/set.js';
+import { strictCommand } from './commands/strict.js';
 
 // Read from the package manifest so --version never drifts from the release.
 // Resolves to apps/cli/package.json under both tsx (src/) and the build (dist/).
@@ -58,6 +62,31 @@ program
   .option('--verify', 'verify the tamper-evident hash chain (needs the master key)')
   .option('--json', 'output raw JSON lines')
   .action(logCommand);
+
+program
+  .command('grant')
+  .description('Allow a project to resolve these secrets at run time')
+  .argument('<name...>', 'secret name(s) to grant')
+  .option('--project <dir>', 'target project directory (default: cwd)')
+  .action(grantCommand);
+
+program
+  .command('revoke')
+  .description("Remove secrets from a project's grant list")
+  .argument('<name...>', 'secret name(s) to revoke')
+  .option('--project <dir>', 'target project directory (default: cwd)')
+  .action(revokeCommand);
+
+program
+  .command('grants')
+  .description('List per-project grants (never values)')
+  .action(grantsCommand);
+
+program
+  .command('strict')
+  .description('Show or set strict mode (blocks ungranted projects at run time)')
+  .argument('[state]', 'on or off')
+  .action(strictCommand);
 
 program.command('rm').description('Delete a secret').argument('<name>').action(rmCommand);
 
