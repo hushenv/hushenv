@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import spawn from 'cross-spawn';
-import { decryptValue, getMasterKey, loadVault } from '@hushenv/vault-core';
+import { decryptValue, deniedNames, getMasterKey, loadVault } from '@hushenv/vault-core';
 import { recordAudit } from '../audit.js';
 import { loadEnvFiles } from '../env-files.js';
-import { resolveRefs } from '../resolve.js';
+import { collectRefs, resolveRefs } from '../resolve.js';
 
 /**
  * The core invariant: plaintext exists only in the child process
@@ -16,6 +16,25 @@ export function runCommand(files: string[], cmd: string[]): void {
   }
 
   const raw = loadEnvFiles(files);
+
+  let project: string;
+  try {
+    project = fs.realpathSync(process.cwd());
+  } catch {
+    project = process.cwd();
+  }
+
+  // Grant enforcement: block refs this project isn't allowed to resolve.
+  const denied = deniedNames(project, collectRefs(raw));
+  if (denied.length > 0) {
+    console.error(`x ${denied.length} secret(s) not granted to this project:`);
+    for (const name of denied) console.error(`    ${name}`);
+    console.error('\n  Grant them with:');
+    for (const name of denied) console.error(`    hushenv grant ${name}`);
+    recordAudit('run', { project, meta: { denied } });
+    process.exitCode = 2;
+    return;
+  }
 
   const key = getMasterKey();
   const vault = loadVault();
@@ -33,12 +52,6 @@ export function runCommand(files: string[], cmd: string[]): void {
     return;
   }
 
-  let project: string;
-  try {
-    project = fs.realpathSync(process.cwd());
-  } catch {
-    project = process.cwd();
-  }
   recordAudit('run', { project, meta: { count: used.length, names: used } });
 
   const childEnv = { ...resolved, ...process.env };
