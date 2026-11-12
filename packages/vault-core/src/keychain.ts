@@ -1,24 +1,13 @@
-import { createRequire } from 'node:module';
 import { generateKey, KEY_BYTES } from './crypto.js';
-import { KeychainUnavailableError, NotInitializedError } from './errors.js';
+import {
+  KeychainAccessError,
+  KeychainUnavailableError,
+  NotInitializedError,
+} from './errors.js';
+import { loadKeyringEntry } from './keyring-loader.js';
 
 const SERVICE = 'hushenv';
 const ACCOUNT = 'master';
-
-const require = createRequire(import.meta.url);
-
-interface KeyringEntry {
-  getPassword(): string | null;
-  setPassword(password: string): void;
-  deletePassword(): boolean;
-}
-
-function keyringEntry(): KeyringEntry {
-  const { Entry } = require('@napi-rs/keyring') as {
-    Entry: new (service: string, account: string) => KeyringEntry;
-  };
-  return new Entry(SERVICE, ACCOUNT);
-}
 
 /** Returns the key from HUSHENV_MASTER_KEY, or null if unset. */
 export function masterKeyFromEnv(): Buffer | null {
@@ -31,17 +20,32 @@ export function masterKeyFromEnv(): Buffer | null {
   return buf;
 }
 
+/**
+ * Reads the stored key. Returns null only when the keychain answered "no such
+ * entry". A keychain that cannot be read (locked, no secret service, native
+ * module failed to load) throws KeychainAccessError instead: "unreadable" must
+ * never be mistaken for "absent", or a caller could replace a key that still
+ * protects the vault.
+ */
+function readStoredKey(): string | null {
+  try {
+    return loadKeyringEntry(SERVICE, ACCOUNT).getPassword();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new KeychainAccessError(
+      `Could not read the master key from the OS keychain (${reason}). ` +
+        'If the keychain is locked, unlock it and retry. ' +
+        'On a machine without a keychain, set HUSHENV_MASTER_KEY.',
+    );
+  }
+}
+
 /** Env var first (CI / no-keychain machines), then the OS keychain. */
 export function getMasterKey(): Buffer {
   const fromEnv = masterKeyFromEnv();
   if (fromEnv) return fromEnv;
 
-  let stored: string | null = null;
-  try {
-    stored = keyringEntry().getPassword();
-  } catch {
-    stored = null;
-  }
+  const stored = readStoredKey();
   if (!stored) {
     throw new NotInitializedError(
       'No master key found. Run `hushenv init` (or set HUSHENV_MASTER_KEY).',
@@ -54,23 +58,25 @@ export function getMasterKey(): Buffer {
   return buf;
 }
 
+/**
+ * True if the OS keychain holds a master key, false if it holds none.
+ * Throws KeychainAccessError when the keychain cannot be read, so callers
+ * cannot treat an unreadable keychain as an empty one.
+ */
 export function hasStoredMasterKey(): boolean {
-  try {
-    return Boolean(keyringEntry().getPassword());
-  } catch {
-    return false;
-  }
+  return Boolean(readStoredKey());
 }
 
 /**
- * Generates a fresh key and stores it in the OS keychain. If no keychain is
- * reachable, throws KeychainUnavailableError carrying the generated key so
- * the caller can offer the HUSHENV_MASTER_KEY fallback.
+ * Generates a fresh key and stores it in the OS keychain, replacing any key
+ * already there. If no keychain is reachable, throws KeychainUnavailableError
+ * carrying the generated key so the caller can offer the HUSHENV_MASTER_KEY
+ * fallback.
  */
 export function createAndStoreMasterKey(): void {
   const key = generateKey();
   try {
-    keyringEntry().setPassword(key.toString('base64'));
+    loadKeyringEntry(SERVICE, ACCOUNT).setPassword(key.toString('base64'));
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     throw new KeychainUnavailableError(
