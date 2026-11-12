@@ -31,7 +31,8 @@ listSecrets();                     // [{ name, createdAt, updatedAt }] — never
 deleteSecret('DB_PASSWORD');
 ```
 
-Errors are typed: `NotInitializedError`, `SecretNotFoundError`, `KeychainUnavailableError`.
+Errors are typed: `NotInitializedError`, `SecretNotFoundError`, `KeychainUnavailableError`,
+`KeychainAccessError` (the keychain could not be read — distinct from "no key stored").
 
 Future surfaces (tray UI, MCP broker) sit on this same engine.
 

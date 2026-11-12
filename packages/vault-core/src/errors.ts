@@ -14,6 +14,14 @@ export class SecretNotFoundError extends Error {
   }
 }
 
+/** The OS keychain could not be read. Says nothing about whether a key exists. */
+export class KeychainAccessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'KeychainAccessError';
+  }
+}
+
 export class KeychainUnavailableError extends Error {
   constructor(
     message: string,
